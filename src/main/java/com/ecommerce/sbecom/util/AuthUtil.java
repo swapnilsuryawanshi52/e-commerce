@@ -11,29 +11,25 @@ import org.springframework.stereotype.Component;
 @Component
 public class AuthUtil {
     @Autowired
-    UserRepository userRepository;
+    private UserRepository userRepository;
 
-    public String loggedInEmail(){
+    public User authenticatedUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
+        String username = authentication.getName();
 
-        return user.getEmail();
+        return userRepository.findByUserName(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
     }
 
-    public Long loggedInUserId(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
-
-        return user.getUserId();
+    public String loggedInEmail() {
+        return authenticatedUser().getEmail();
     }
 
-    public User loggedInUser(){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    public Long loggedInUserId() {
+        return authenticatedUser().getUserId();
+    }
 
-        User user = userRepository.findByUserName(authentication.getName())
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + authentication.getName()));
-        return user;
+    public User loggedInUser() {
+        return authenticatedUser();
     }
 }
