@@ -30,12 +30,14 @@ public class AddressController {
         return new ResponseEntity<>(savedAddressDTO, HttpStatus.CREATED);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/addresses")
     public ResponseEntity<List<AddressDTO>> getAddresses(){
         List<AddressDTO> addressList = addressService.getAddresses();
         return new ResponseEntity<>(addressList, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/addresses/{addressId}")
     public ResponseEntity<AddressDTO> getAddressById(@PathVariable Long addressId){
         AddressDTO addressDTO = addressService.getAddressesById(addressId);
@@ -43,6 +45,7 @@ public class AddressController {
     }
 
 
+    @PreAuthorize("hasRole('USER')")
     @GetMapping("/users/addresses")
     public ResponseEntity<List<AddressDTO>> getUserAddresses(){
         User user = authUtil.loggedInUser();
@@ -50,15 +53,17 @@ public class AddressController {
         return new ResponseEntity<>(addressList, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('USER')")
     @PutMapping("/addresses/{addressId}")
-    public ResponseEntity<AddressDTO> updateAddress(@PathVariable Long addressId
+    public ResponseEntity<AddressDTO> deleteAddress(@PathVariable Long addressId
             , @RequestBody AddressDTO addressDTO){
         AddressDTO updatedAddress = addressService.updateAddress(addressId, addressDTO);
         return new ResponseEntity<>(updatedAddress, HttpStatus.OK);
     }
 
+    @PreAuthorize("hasRole('USER')")
     @DeleteMapping("/addresses/{addressId}")
-    public ResponseEntity<String> updateAddress(@PathVariable Long addressId){
+    public ResponseEntity<String> deleteAddress(@PathVariable Long addressId){
         String status = addressService.deleteAddress(addressId);
         return new ResponseEntity<>(status, HttpStatus.OK);
     }

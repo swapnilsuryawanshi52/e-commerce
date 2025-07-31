@@ -14,6 +14,8 @@ import java.util.Set;
 @Entity
 @Data
 @NoArgsConstructor
+@EqualsAndHashCode(exclude = {"cart", "addresses", "roles", "products"}) // ✅ Fix stack overflow
+@ToString(exclude = {"cart", "products"}) // Avoid recursive toString
 @Table(name = "users",
         uniqueConstraints = {
                 @UniqueConstraint(columnNames = "username"),
@@ -47,27 +49,22 @@ public class User {
         this.password = password;
     }
 
-    @Setter
-    @Getter
-    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-            fetch = FetchType.EAGER)
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
 
-    @Getter
-    @Setter
     @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private List<Address> addresses = new ArrayList<>();
 
-    @ToString.Exclude
     @OneToOne(mappedBy = "user", cascade = { CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private Cart cart;
 
-    @ToString.Exclude
-    @OneToMany(mappedBy = "user",
-            cascade = {CascadeType.PERSIST, CascadeType.MERGE},
-            orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, orphanRemoval = true)
     private Set<Product> products;
+
+    public boolean hasRole(AppRole roleName) {
+        return roles.stream().anyMatch(role -> role.getRoleName().equals(roleName));
+    }
 }

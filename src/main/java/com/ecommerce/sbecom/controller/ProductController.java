@@ -1,11 +1,12 @@
 package com.ecommerce.sbecom.controller;
 
 import com.ecommerce.sbecom.config.AppConstants;
+import com.ecommerce.sbecom.entity.User;
 import com.ecommerce.sbecom.payload.ProductDTO;
 import com.ecommerce.sbecom.payload.ProductResponse;
 import com.ecommerce.sbecom.service.ProductService;
+import com.ecommerce.sbecom.util.AuthUtil;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,51 +19,41 @@ import java.io.IOException;
 @RequestMapping("/api")
 public class ProductController {
 
-    @Autowired
-    private ProductService productService;
+    private final ProductService productService;
+    private final AuthUtil authUtil;
+
+    public ProductController(ProductService productService,
+                             AuthUtil authUtil) {
+        this.productService = productService;
+        this.authUtil = authUtil;
+    }
 
     @PreAuthorize("hasRole('SELLER')")
-    @PostMapping("/categories/{categoryId}/product")
-    public ResponseEntity<ProductDTO> addProduct(@Valid @RequestBody ProductDTO productDTO,
-                                                 @PathVariable Long categoryId){
-        ProductDTO savedProductDTO = productService.addProduct(categoryId, productDTO);
+    @PostMapping("/products")
+    public ResponseEntity<ProductDTO> addProduct(@Valid @RequestBody ProductDTO productDTO){
+        ProductDTO savedProductDTO = productService.addProduct(productDTO);
         return new ResponseEntity<>(savedProductDTO, HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('USER')")
     @GetMapping("/products")
     public ResponseEntity<ProductResponse> getAllProducts(
-            @RequestParam(name = "keyword", required = false) String keyword,
-            @RequestParam(name = "category", required = false) String category,
+            @RequestParam(name = "query", required = false) String query,
+            @RequestParam(name = "categoryId", required = false) Long categoryId,
+            @RequestParam(name = "createdByMe", required = false, defaultValue = "false") Boolean createdByMe,
             @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
             @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
             @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY, required = false) String sortBy,
             @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder
     ){
-        ProductResponse productResponse = productService.getAllProducts(pageNumber, pageSize, sortBy, sortOrder, keyword, category);
-        return new ResponseEntity<>(productResponse,HttpStatus.OK);
+        User currentUser = authUtil.loggedInUser();
+        ProductResponse productResponse = productService.getAllProducts(pageNumber, pageSize, sortBy, sortOrder, query, categoryId, createdByMe, currentUser);
+        return ResponseEntity.ok(productResponse);
     }
 
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("/categories/{categoryId}/products")
-    public ResponseEntity<ProductResponse> getProductsByCategory(@PathVariable Long categoryId,
-                                                                 @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-                                                                 @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-                                                                 @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY, required = false) String sortBy,
-                                                                 @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder){
-        ProductResponse productResponse = productService.searchByCategory(categoryId, pageNumber, pageSize, sortBy, sortOrder);
-        return new ResponseEntity<>(productResponse, HttpStatus.OK);
-    }
-
-    @PreAuthorize("hasRole('USER')")
-    @GetMapping("/products/keyword/{keyword}")
-    public ResponseEntity<ProductResponse> getProductsByKeyword(@PathVariable String keyword,
-                                                                @RequestParam(name = "pageNumber", defaultValue = AppConstants.PAGE_NUMBER, required = false) Integer pageNumber,
-                                                                @RequestParam(name = "pageSize", defaultValue = AppConstants.PAGE_SIZE, required = false) Integer pageSize,
-                                                                @RequestParam(name = "sortBy", defaultValue = AppConstants.SORT_PRODUCTS_BY, required = false) String sortBy,
-                                                                @RequestParam(name = "sortOrder", defaultValue = AppConstants.SORT_DIR, required = false) String sortOrder){
-        ProductResponse productResponse = productService.searchProductByKeyword(keyword, pageNumber, pageSize, sortBy, sortOrder);
-        return new ResponseEntity<>(productResponse, HttpStatus.FOUND);
+    @GetMapping("/products/{productId}")
+    public ResponseEntity<ProductDTO> getProductById(@PathVariable Long productId) {
+        ProductDTO productDTO = productService.getProductById(productId);
+        return ResponseEntity.ok(productDTO);
     }
 
     @PreAuthorize("hasRole('SELLER')")
@@ -70,21 +61,21 @@ public class ProductController {
     public ResponseEntity<ProductDTO> updateProduct(@Valid @RequestBody ProductDTO productDTO,
                                                     @PathVariable Long productId){
         ProductDTO updatedProductDTO = productService.updateProduct(productId, productDTO);
-        return new ResponseEntity<>(updatedProductDTO, HttpStatus.OK);
+        return ResponseEntity.ok(updatedProductDTO);
     }
 
     @PreAuthorize("hasRole('SELLER')")
     @DeleteMapping("/products/{productId}")
-    public ResponseEntity<ProductDTO> deleteProduct(@PathVariable Long productId){
-        ProductDTO deletedProduct = productService.deleteProduct(productId);
-        return new ResponseEntity<>(deletedProduct, HttpStatus.OK);
+    public ResponseEntity<String> deleteProduct(@PathVariable Long productId){
+        productService.deleteProduct(productId);
+        return ResponseEntity.ok("Product deleted successfully.");
     }
 
     @PreAuthorize("hasRole('SELLER')")
     @PutMapping("/products/{productId}/image")
     public ResponseEntity<ProductDTO> updateProductImage(@PathVariable Long productId,
                                                          @RequestParam("image")MultipartFile image) throws IOException {
-        ProductDTO updatedProduct = productService.updateProductImage(productId, image);
-        return new ResponseEntity<>(updatedProduct, HttpStatus.OK);
+        ProductDTO updatedProductDTO = productService.updateProductImage(productId, image);
+        return ResponseEntity.ok(updatedProductDTO);
     }
 }

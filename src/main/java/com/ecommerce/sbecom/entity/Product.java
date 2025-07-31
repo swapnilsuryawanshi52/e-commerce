@@ -16,7 +16,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "products")
-@ToString
 public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -25,12 +24,15 @@ public class Product {
     @NotBlank
     @Size(min = 3, message = "Product name must contain atleast 3 characters")
     private String productName;
+
     private String image;
 
     @NotBlank
     @Size(min = 6, message = "Product description must contain atleast 6 characters")
     private String description;
+
     private Integer quantity;
+
     private double price;
     private double discount;
     private double specialPrice;
@@ -43,6 +45,6 @@ public class Product {
     @JoinColumn(name = "seller_id")
     private User user;
 
-    @OneToMany(mappedBy = "product", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.EAGER)
-    private List<CartItem> products = new ArrayList<>();
+    @OneToMany(mappedBy = "product", cascade = {CascadeType.PERSIST, CascadeType.MERGE}, fetch = FetchType.LAZY)
+    private List<CartItem> cartItems = new ArrayList<>();
 }
