@@ -7,7 +7,9 @@ import com.ecommerce.sbecom.payload.OrderDTO;
 import com.ecommerce.sbecom.payload.OrderItemDTO;
 import com.ecommerce.sbecom.repository.*;
 import com.ecommerce.sbecom.service.CartService;
+import com.ecommerce.sbecom.service.EmailService;
 import com.ecommerce.sbecom.service.OrderService;
+import com.ecommerce.sbecom.util.AuthUtil;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,9 +46,20 @@ public class OrderServiceImpl implements OrderService {
     @Autowired
     ProductRepository productRepository;
 
-    @Override
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private AuthUtil authUtil;
+
     @Transactional
-    public OrderDTO placeOrder(String emailId, Long addressId, String paymentMethod, String pgName, String pgPaymentId, String pgStatus, String pgResponseMessage) {
+    @Override
+    public OrderDTO placeOrder(String emailId, Long addressId, String paymentMethod,
+                               String pgName, String pgPaymentId, String pgStatus,
+                               String pgResponseMessage) {
         Cart cart = cartRepository.findCartByEmail(emailId);
         if (cart == null) {
             throw new ResourceNotFoundException("Cart", "email", emailId);
@@ -68,6 +81,17 @@ public class OrderServiceImpl implements OrderService {
         order.setPayment(payment);
 
         Order savedOrder = orderRepository.save(order);
+
+         User user = userRepository.findByEmail(emailId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", emailId));
+
+        emailService.sendOrderConfirmation(
+                user.getEmail(),
+                user.getFirstName(),
+                order.getOrderId().toString(),
+                order.getTotalAmount().toString(),
+                address.getFullAddress()
+        );
 
         List<CartItem> cartItems = cart.getCartItems();
         if (cartItems.isEmpty()) {
@@ -145,6 +169,8 @@ public class OrderServiceImpl implements OrderService {
         order.setOrderStatus("Order Cancelled");
         orderRepository.save(order);
 
+        //emailService.sendOrderNotification(order.getEmail(), order.getOrderId().toString(), EmailType.ORDER_CANCELLED);
+
         List<OrderItem> orderItems = orderItemRepository.findByOrder(order);
         for (OrderItem item : orderItems) {
             Product product = item.getProduct();
@@ -158,5 +184,30 @@ public class OrderServiceImpl implements OrderService {
             cartRepository.save(cart);
         }
         return "Order with ID: " + orderId + " has been cancelled successfully.";
+    }
+
+    @Override
+    public String markOrderShipped(String emailId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        order.setEmailType(EmailType.ORDER_SHIPPED);
+        orderRepository.save(order);
+
+        //emailService.sendOrderNotification(order.getEmail(), order.getOrderId().toString(), EmailType.ORDER_SHIPPED);
+
+        return "Order with ID: " + orderId + " has been shipped.";
+    }
+
+    @Override
+    public String markOrderDelivered(String emailId, Long orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found"));
+
+        order.setEmailType(EmailType.ORDER_DELIVERED);
+        orderRepository.save(order);
+
+        //emailService.sendOrderNotification(order.getEmail(), order.getOrderId().toString(), EmailType.ORDER_DELIVERED);
+        return "Order with ID: " + orderId + " has been delivered successfully.";
     }
 }

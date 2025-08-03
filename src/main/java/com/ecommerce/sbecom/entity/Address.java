@@ -3,15 +3,16 @@ package com.ecommerce.sbecom.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "addresses")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude = {"user"})
+@ToString(exclude = {"user"})
 public class Address {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -52,5 +53,10 @@ public class Address {
         this.state = state;
         this.country = country;
         this.pincode = pincode;
+    }
+
+    public String getFullAddress() {
+        return buildingName + ", " + street + ", " + city + ", " + state + ", " +
+                country + " - " + pincode;
     }
 }

@@ -24,13 +24,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Set;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-public class WebSecurityConfig {
+public class WebSecurityConfig implements WebMvcConfigurer {
+
     @Autowired
     private UserDetailsServiceImpl userDetailsService;
 
@@ -70,8 +73,6 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(auth ->
                         auth.requestMatchers("/api/auth/**").permitAll()
                                 .requestMatchers("/v3/api-docs/**").permitAll()
-                                //.requestMatchers("/h2-console/**").permitAll()
-                                //.requestMatchers("/api/admin/**").permitAll()
                                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                                 .requestMatchers("/api/seller/**").hasRole("SELLER")
                                 .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
@@ -104,6 +105,7 @@ public class WebSecurityConfig {
     @Bean
     public CommandLineRunner initData(RoleRepository roleRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
         return args -> {
+            // Ensure roles exist
             Role userRole = roleRepository.findByRoleName(AppRole.ROLE_USER)
                     .orElseGet(() -> roleRepository.save(new Role(AppRole.ROLE_USER)));
 
@@ -117,47 +119,56 @@ public class WebSecurityConfig {
             Set<Role> sellerRoles = Set.of(sellerRole);
             Set<Role> adminRoles = Set.of(userRole, sellerRole, adminRole);
 
-            if (!userRepository.existsByUserName("user")) {
-                User user = new User("user", "user@example.com", passwordEncoder.encode("user"));
-                user.setRoles(userRoles);
-                userRepository.save(user);
-            }
-
-            if (!userRepository.existsByUserName("seller")) {
-                User seller = new User("seller", "seller@example.com", passwordEncoder.encode("seller"));
-                seller.setRoles(sellerRoles);
-                userRepository.save(seller);
-            }
-
-            if (!userRepository.existsByUserName("admin")) {
-                User admin = new User("admin", "admin@example.com", passwordEncoder.encode("admin"));
-                admin.setRoles(adminRoles);
-                userRepository.save(admin);
-            }
-
-            // For existing users: set roles if missing
-            userRepository.findByUserName("user").ifPresent(user -> {
+            // Create or update user
+            userRepository.findByUserName("user").ifPresentOrElse(user -> {
+                user.setEmail("swapnilboss2006@gmail.com");
+                user.setFirstName("Alex");
+                user.setLastName("Smith");
                 if (user.getRoles().isEmpty()) {
                     user.setRoles(userRoles);
-                    userRepository.save(user);
                 }
+                userRepository.save(user);
+            }, () -> {
+                User user = new User("user", "swapnilboss2006@gmail.com", passwordEncoder.encode("user"));
+                user.setFirstName("Alex");
+                user.setLastName("Smith");
+                user.setRoles(userRoles);
+                userRepository.save(user);
             });
 
-            userRepository.findByUserName("seller").ifPresent(seller -> {
+            // Create or update seller
+            userRepository.findByUserName("seller").ifPresentOrElse(seller -> {
+                seller.setEmail("swapnilss140700@gmail.com");
+                seller.setFirstName("John");
+                seller.setLastName("Doe");
                 if (seller.getRoles().isEmpty()) {
                     seller.setRoles(sellerRoles);
-                    userRepository.save(seller);
                 }
+                userRepository.save(seller);
+            }, () -> {
+                User seller = new User("seller", "swapnilss140700@gmail.com", passwordEncoder.encode("seller"));
+                seller.setRoles(sellerRoles);
+                seller.setFirstName("John");
+                seller.setLastName("Doe");
+                userRepository.save(seller);
             });
 
-            userRepository.findByUserName("admin").ifPresent(admin -> {
+            // Create or update admin
+            userRepository.findByUserName("admin").ifPresentOrElse(admin -> {
+                admin.setEmail("swapnilss1407@gmail.com");
+                admin.setFirstName("Will");
+                admin.setLastName("Turner");
                 if (admin.getRoles().isEmpty()) {
                     admin.setRoles(adminRoles);
-                    userRepository.save(admin);
                 }
+                userRepository.save(admin);
+            }, () -> {
+                User admin = new User("admin", "swapnilss1407@gmail.com", passwordEncoder.encode("admin"));
+                admin.setRoles(adminRoles);
+                admin.setFirstName("Will");
+                admin.setLastName("Turner");
+                userRepository.save(admin);
             });
         };
     }
-
-
 }

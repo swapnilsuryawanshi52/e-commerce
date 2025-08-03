@@ -129,6 +129,29 @@ public class ProductServiceImpl implements ProductService {
                 page.getTotalElements(), page.getTotalPages(), page.isLast());
     }
 
+//    @Override
+//    public ProductResponse getAllProducts(Integer pageNumber, Integer pageSize, String sortBy,
+//                                          String sortOrder, ProductFilterDTO filterDTO, User currentUser) {
+//        Pageable pageable = PageRequest.of(pageNumber, pageSize,
+//                sortOrder.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() : Sort.by(sortBy).descending());
+//
+//        Specification<Product> specification = ProductSpecification.getSpecification(filterDTO);
+//
+//        if (Boolean.TRUE.equals(filterDTO.getCreatedByMe()) && currentUser.hasRole(AppRole.ROLE_SELLER)) {
+//            specification = specification.and((root, query, cb) -> cb.equal(root.get("user"), currentUser));
+//        }
+//
+//        Page<Product> productPage = productRepository.findAll(specification, pageable);
+//
+//        List<ProductDTO> productDTOs = productPage.getContent().stream()
+//                .map(product -> modelMapper.map(product, ProductDTO.class))
+//                .toList();
+//
+//        return new ProductResponse(productDTOs, pageNumber, pageSize,
+//                productPage.getTotalElements(), productPage.getTotalPages(), productPage.isLast());
+//    }
+
+
     @Override
     public ProductDTO getProductById(Long productId) {
         return mapToDTO(getProductOrThrow(productId));

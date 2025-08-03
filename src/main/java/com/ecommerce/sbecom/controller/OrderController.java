@@ -41,10 +41,24 @@ public class OrderController {
         return new ResponseEntity<>(order, HttpStatus.OK);
     }
 
-    @PostMapping("/orders/{orderId}/cancel")
+    @PutMapping("/orders/{orderId}/cancel")
     public ResponseEntity<String> cancelOrder(@PathVariable Long orderId) {
         String emailId = authUtil.loggedInEmail();
-        String response = orderService.cancelOrder(emailId, orderId);
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        orderService.cancelOrder(emailId, orderId);
+        return ResponseEntity.ok("Order cancelled and email sent.");
+    }
+
+    @PutMapping("/orders/{orderId}/ship")
+    public ResponseEntity<String> shipOrder(@PathVariable Long orderId) {
+        String emailId = authUtil.loggedInEmail();
+        orderService.markOrderShipped(emailId, orderId);
+        return ResponseEntity.ok("Order marked as shipped and email sent.");
+    }
+
+    @PutMapping("orders/{orderId}/deliver")
+    public ResponseEntity<String> deliverOrder(@PathVariable Long orderId) {
+        String emailId = authUtil.loggedInEmail();
+        orderService.markOrderDelivered(emailId, orderId);
+        return ResponseEntity.ok("Order delivered and email sent.");
     }
 }
